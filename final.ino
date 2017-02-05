@@ -295,6 +295,7 @@ void evaluateButtons() {
           contador_anterior = -1;
           sensors[contador].trigger_value = trigger_value;
           sensors[contador].manual = manual_value;
+          saveSensorData();
         } else {
           trigger_value = sensors[contador].trigger_value;
           manual_value = sensors[contador].manual;
@@ -306,6 +307,36 @@ void evaluateButtons() {
         break;
     }
     last_jump = millis();
+  }
+}
+
+void saveSensorData() {
+  resetLcd();
+  lcd.print("Buscando SD...");
+  if(sd.begin()){
+    resetLcd();
+    lcd.print("Guardando S" + contador);
+    String ttempFileName = "s" + String(contador) + "ttemp.txt";
+    char ttempFileNameChar[15];
+    ttempFileName.toCharArray(ttempFileNameChar, 15); 
+    File ttempDataFile = sd.open(ttempFileNameChar, FILE_WRITE);
+    lcd.setCursor(0, 1);
+    if(ttempDataFile){ 
+      ttempDataFile.seek(0);
+      ttempDataFile.print("       ");
+      ttempDataFile.seek(0);
+      ttempDataFile.print(sensors[contador].trigger_value);
+      lcd.print("Exito ");
+      lcd.write(byte(SYM_SELECT)); 
+    } else {
+      lcd.print("Error ");
+      lcd.write(byte(SYM_CANCEL));
+    }
+    delay(150);
+  } else {
+    resetLcd();
+    lcd.print("No hay SD!");
+    delay(1000);
   }
 }
 
@@ -529,37 +560,63 @@ int initializeSensors() {
   if (sd.begin(PIN_SD_CS)) {
     for (int i = 0; i < MAX_SENSORS; i++) {
       String number = String(i);
-      String fileName = "s" + number + "config.txt";
-      char fileNameChar[15];
-      fileName.toCharArray(fileNameChar, 15);
-      if (sd.exists(fileNameChar)) {
-        resetLcd();
-        lcd.print("Configurando S" + number);
-        File dataFile = sd.open(fileNameChar);
-        if (dataFile) {
-          sensors[i].number = i;
-          sensors[i].rom = dataFile.readStringUntil(',');
-          sensors[i].trigger_value = dataFile.readString().toFloat();
-          sensors[i].last_value = 0;
-          sensors[i].relay = relays[i];
-          dataFile.close();
-          lcd.setCursor(0, 1);
-          lcd.print("Exito ");
-          lcd.write(byte(SYM_SELECT));
-          delay(150);
-        } else {
-          lcd.setCursor(0, 1);
-          lcd.print("Error ");
-          lcd.write(byte(SYM_CANCEL));
-          return 0;
-        }
-      } else {
+      
+      String configFileName = "s" + number + "config.txt";
+      char configFileNameChar[15];
+      configFileName.toCharArray(configFileNameChar, 15);
+      
+      String ttempFileName = "s" + number + "ttemp.txt";
+      char ttempFileNameChar[15];
+      ttempFileName.toCharArray(ttempFileNameChar, 15);
+
+      if(!sd.exists(configFileNameChar)){
         resetLcd();
         lcd.print("Falta el archivo");
         lcd.setCursor(0, 1);
         lcd.print("de conf. del S" + number);
         return 0;
       }
+
+      if(!sd.exists(ttempFileNameChar)){
+        resetLcd();
+        lcd.print("Falta el archivo");
+        lcd.setCursor(0, 1);
+        lcd.print("de temp. del S" + number);
+        return 0;
+      }
+
+      resetLcd();
+      lcd.print("Configurando S" + number);
+      File configDataFile = sd.open(configFileNameChar);
+      File ttempDataFile = sd.open(ttempFileNameChar);
+
+      if(!configDataFile){
+        lcd.setCursor(0, 1);
+        lcd.print("Error conf.");
+        lcd.write(byte(SYM_CANCEL));
+        return 0;
+      }
+
+      if(!ttempDataFile){
+        lcd.setCursor(0, 1);
+        lcd.print("Error temp.");
+        lcd.write(byte(SYM_CANCEL));
+        return 0;
+      }
+      
+      sensors[i].number = i;
+      sensors[i].rom = configDataFile.readString();
+      sensors[i].trigger_value = ttempDataFile.readString().toFloat();
+      sensors[i].last_value = 0;
+      sensors[i].relay = relays[i];
+
+      configDataFile.close();
+      ttempDataFile.close();
+      
+      lcd.setCursor(0, 1);
+      lcd.print("Exito ");
+      lcd.write(byte(SYM_SELECT));
+      delay(150);
     }
   } else {
     resetLcd();
