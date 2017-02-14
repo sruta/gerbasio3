@@ -314,9 +314,10 @@ void saveSensorData() {
   resetLcd();
   lcd.print("Buscando SD...");
   if(sd.begin()){
+    String contadorString = String(contador);
     resetLcd();
-    lcd.print("Guardando S" + contador);
-    String ttempFileName = "s" + String(contador) + "ttemp.txt";
+    lcd.print("Guardando S" + contadorString);
+    String ttempFileName = "s" + contadorString + "ttemp.txt";
     char ttempFileNameChar[15];
     ttempFileName.toCharArray(ttempFileNameChar, 15); 
     File ttempDataFile = sd.open(ttempFileNameChar, FILE_WRITE);
@@ -332,7 +333,8 @@ void saveSensorData() {
       lcd.print("Error ");
       lcd.write(byte(SYM_CANCEL));
     }
-    delay(150);
+    ttempDataFile.close();
+    delay(500);
   } else {
     resetLcd();
     lcd.print("No hay SD!");
