@@ -82,7 +82,7 @@ sensor sensors[MAX_SENSORS];
 LiquidCrystal lcd(8, 9, 4, 5, 6, 7);
 
 //Inicializamos el bus OneWire
-OneWire  ds(22);
+OneWire  ds(PIN_SENSORS);
 
 //Declaramos la tarjeta sd
 SdFat sd;
@@ -344,11 +344,11 @@ void saveSensorData() {
 
 int recognizeButton() {
   int analog = analogRead(PIN_BTNS);
-#ifdef DEBUG
-  Serial.print("Lectura boton: ");
-  Serial.print(analog);
-  Serial.print("\n");
-#endif
+//#ifdef DEBUG
+//  Serial.print("Lectura boton: ");
+//  Serial.print(analog);
+//  Serial.print("\n");
+//#endif
   if (analog < 50) {
     //0
     return BTN_RIGHT;
@@ -530,19 +530,27 @@ void readSensors() {
 #ifdef DEBUG
     Serial.println(rom);
 #endif
-
+#ifdef DEBUG
+    Serial.println("------");
+#endif
     int i = 0;
     boolean founded = false;
     while (i < MAX_SENSORS && !founded) {
+#ifdef DEBUG
+    Serial.println(sensors[i].rom);
+#endif      
       if (sensors[i].rom == rom) {
         founded = true;
       } else {
         i++;
       }
     }
+#ifdef DEBUG
+    Serial.println("------");
+#endif
     sensors[i].last_value = (float)raw / 16.0;
     sensors[i].founded = true;
-  }
+}
 
   for (int i = 0; i < MAX_SENSORS; i++) {
     sensors[i].last_value = (sensors[i].founded) ? sensors[i].last_value : -127;
@@ -608,6 +616,7 @@ int initializeSensors() {
       
       sensors[i].number = i;
       sensors[i].rom = configDataFile.readString();
+      sensors[i].rom = sensors[i].rom.substring(0,14);
       sensors[i].trigger_value = ttempDataFile.readString().toFloat();
       sensors[i].last_value = 0;
       sensors[i].relay = relays[i];
