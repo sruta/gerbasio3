@@ -285,8 +285,8 @@ void evaluateButtons() {
         break;
       case BTN_LEFT:
         //simbolo = SYM_LEFT;
-        if(!edit){
-          evaluateSensors();  
+        if (!edit) {
+          evaluateSensors();
         }
         delay(100);
         break;
@@ -313,22 +313,22 @@ void evaluateButtons() {
 void saveSensorData() {
   resetLcd();
   lcd.print("Buscando SD...");
-  if(sd.begin()){
+  if (sd.begin()) {
     String contadorString = String(contador);
     resetLcd();
     lcd.print("Guardando S" + contadorString);
     String ttempFileName = "s" + contadorString + "ttemp.txt";
     char ttempFileNameChar[15];
-    ttempFileName.toCharArray(ttempFileNameChar, 15); 
+    ttempFileName.toCharArray(ttempFileNameChar, 15);
     File ttempDataFile = sd.open(ttempFileNameChar, FILE_WRITE);
     lcd.setCursor(0, 1);
-    if(ttempDataFile){ 
+    if (ttempDataFile) {
       ttempDataFile.seek(0);
       ttempDataFile.print("       ");
       ttempDataFile.seek(0);
       ttempDataFile.print(sensors[contador].trigger_value);
       lcd.print("Exito ");
-      lcd.write(byte(SYM_SELECT)); 
+      lcd.write(byte(SYM_SELECT));
     } else {
       lcd.print("Error ");
       lcd.write(byte(SYM_CANCEL));
@@ -344,11 +344,11 @@ void saveSensorData() {
 
 int recognizeButton() {
   int analog = analogRead(PIN_BTNS);
-//#ifdef DEBUG
-//  Serial.print("Lectura boton: ");
-//  Serial.print(analog);
-//  Serial.print("\n");
-//#endif
+  //#ifdef DEBUG
+  //  Serial.print("Lectura boton: ");
+  //  Serial.print(analog);
+  //  Serial.print("\n");
+  //#endif
   if (analog < 50) {
     //0
     return BTN_RIGHT;
@@ -390,7 +390,7 @@ void evaluateTime() {
 
 void evaluateSensors() {
   readSensors();
-  writeSd();
+  //writeSd();
   last_sense = millis();
   contador_anterior = -1;
   trigger_value_anterior = -1;
@@ -537,8 +537,8 @@ void readSensors() {
     boolean founded = false;
     while (i < MAX_SENSORS && !founded) {
 #ifdef DEBUG
-    Serial.println(sensors[i].rom);
-#endif      
+      Serial.println(sensors[i].rom);
+#endif
       if (sensors[i].rom == rom) {
         founded = true;
       } else {
@@ -548,9 +548,11 @@ void readSensors() {
 #ifdef DEBUG
     Serial.println("------");
 #endif
-    sensors[i].last_value = (float)raw / 16.0;
-    sensors[i].founded = true;
-}
+    if (founded) {
+      sensors[i].last_value = (float)raw / 16.0;
+      sensors[i].founded = true;
+    }
+  }
 
   for (int i = 0; i < MAX_SENSORS; i++) {
     sensors[i].last_value = (sensors[i].founded) ? sensors[i].last_value : -127;
@@ -570,16 +572,16 @@ int initializeSensors() {
   if (sd.begin(PIN_SD_CS)) {
     for (int i = 0; i < MAX_SENSORS; i++) {
       String number = String(i);
-      
+
       String configFileName = "s" + number + "config.txt";
       char configFileNameChar[15];
       configFileName.toCharArray(configFileNameChar, 15);
-      
+
       String ttempFileName = "s" + number + "ttemp.txt";
       char ttempFileNameChar[15];
       ttempFileName.toCharArray(ttempFileNameChar, 15);
 
-      if(!sd.exists(configFileNameChar)){
+      if (!sd.exists(configFileNameChar)) {
         resetLcd();
         lcd.print("Falta el archivo");
         lcd.setCursor(0, 1);
@@ -587,7 +589,7 @@ int initializeSensors() {
         return 0;
       }
 
-      if(!sd.exists(ttempFileNameChar)){
+      if (!sd.exists(ttempFileNameChar)) {
         resetLcd();
         lcd.print("Falta el archivo");
         lcd.setCursor(0, 1);
@@ -600,30 +602,30 @@ int initializeSensors() {
       File configDataFile = sd.open(configFileNameChar);
       File ttempDataFile = sd.open(ttempFileNameChar);
 
-      if(!configDataFile){
+      if (!configDataFile) {
         lcd.setCursor(0, 1);
         lcd.print("Error conf.");
         lcd.write(byte(SYM_CANCEL));
         return 0;
       }
 
-      if(!ttempDataFile){
+      if (!ttempDataFile) {
         lcd.setCursor(0, 1);
         lcd.print("Error temp.");
         lcd.write(byte(SYM_CANCEL));
         return 0;
       }
-      
+
       sensors[i].number = i;
       sensors[i].rom = configDataFile.readString();
-      sensors[i].rom = sensors[i].rom.substring(0,14);
+      sensors[i].rom = sensors[i].rom.substring(0, 14);
       sensors[i].trigger_value = ttempDataFile.readString().toFloat();
       sensors[i].last_value = 0;
       sensors[i].relay = relays[i];
 
       configDataFile.close();
       ttempDataFile.close();
-      
+
       lcd.setCursor(0, 1);
       lcd.print("Exito ");
       lcd.write(byte(SYM_SELECT));
