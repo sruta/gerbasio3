@@ -31,7 +31,7 @@ const int PIN_SD_CS =     53;
 //Temperatura base
 const float BASE_TEMP =   -127;
 //Definimos el tiempo entre mediciones
-const long INTERVAL =     300000L;
+const long INTERVAL =     60000L;
 //Definimos el tiempo entre jumps
 const long JUMP_INTERVAL = 10000L;
 //Definimos los pines de los relays
@@ -215,10 +215,9 @@ void printSituation() {
 void evaluateConditions() {
   boolean flagOn = false;
   for (int i = 1; i < MAX_SENSORS; i++) {
-    if ((sensors[i].founded && sensors[i].last_value > sensors[i].trigger_value) || sensors[i].manual) {
-      if (i != 1) {
-        flagOn = true;
-      }
+    //if ((sensors[i].founded && sensors[i].last_value > sensors[i].trigger_value) || sensors[i].manual) {
+    if ((sensors[i].last_value > sensors[i].trigger_value) || sensors[i].manual) {
+      flagOn = true;
       if (digitalRead(relays[i]) != LOW) {
         digitalWrite(relays[i], LOW);
         sensors[i].on = true;
@@ -503,7 +502,7 @@ void readSensors() {
     ds.reset();
     ds.select(addr);
     ds.write(0xBE);
-
+    
     for ( i = 0; i < 9; i++) {
       data[i] = ds.read();
     }
